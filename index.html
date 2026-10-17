@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApexOdds | Next-Gen Live Sportsbook & 2D Match Tracker</title>
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        apex: {
+                            bg: '#07090E',
+                            card: '#0D111A',
+                            border: '#1C2436',
+                            green: '#00E676',
+                            greenGlow: 'rgba(0, 230, 118, 0.25)',
+                            crimson: '#FF1744',
+                            crimsonGlow: 'rgba(255, 23, 68, 0.25)',
+                            cyan: '#00B0FF',
+                            amber: '#FFAB00'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #1C2436 #07090E;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #07090E;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1C2436;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00E676;
+        }
+
+        body {
+            background-color: #07090E;
+            color: #F8FAFC;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(0, 230, 118, 0.07) 0%, transparent 35%),
+                radial-gradient(circle at 85% 25%, rgba(255, 23, 68, 0.06) 0%, transparent 35%),
+                radial-gradient(circle at 50% 85%, rgba(0, 176, 255, 0.05) 0%, transparent 45%);
+            overflow-x: hidden;
+        }
+
+        /* Liquid Glass Morphism */
+        .liquid-glass {
+            background: linear-gradient(145deg, rgba(19, 25, 38, 0.78) 0%, rgba(10, 14, 22, 0.90) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .liquid-glass-interactive {
+            background: linear-gradient(145deg, rgba(22, 29, 45, 0.75) 0%, rgba(12, 16, 26, 0.88) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .liquid-glass-interactive:hover {
+            border-color: rgba(0, 230, 118, 0.35);
+            box-shadow: 0 12px 32px -8px rgba(0, 230, 118, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Infinite Marquee Ticker */
+        @keyframes tickerMarquee {
+            0% { transform: translate3d(0%, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        .ticker-track {
+            display: flex;
+            width: max-content;
+            animation: tickerMarquee 38s linear infinite;
+        }
+
+        .ticker-track:hover {
+            animation-play-state: paused;
+        }
+
+        /* Odds Up (Green) & Down (Crimson) Pulse Animations */
+        @keyframes flashOddsUp {
+            0% {
+                background-color: rgba(0, 230, 118, 0.42);
+                border-color: #00E676;
+                box-shadow: 0 0 24px rgba(0, 230, 118, 0.65), inset 0 0 12px rgba(0, 230, 118, 0.35);
+                transform: scale(1.035);
+            }
+            100% {
+                background-color: rgba(15, 21, 35, 0.85);
+                border-color: rgba(255, 255, 255, 0.08);
+                box-shadow: none;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes flashOddsDown {
+            0% {
+                background-color: rgba(255, 23, 68, 0.42);
+                border-color: #FF1744;
+                box-shadow: 0 0 24px rgba(255, 23, 68, 0.65), inset 0 0 12px rgba(255, 23, 68, 0.35);
+                transform: scale(0.975);
+            }
+            100% {
+                background-color: rgba(15, 21, 35, 0.85);
+                border-color: rgba(255, 255, 255, 0.08);
+                box-shadow: none;
+                transform: scale(1);
+            }
+        }
+
+        .odds-flash-up {
+            animation: flashOddsUp 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .odds-flash-down {
+            animation: flashOddsDown 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Selected Odds Button State */
+        .odds-selected {
+            background: linear-gradient(135deg, rgba(0, 230, 118, 0.28) 0%, rgba(0, 230, 118, 0.12) 100%) !important;
+            border-color: #00E676 !important;
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.4), inset 0 0 10px rgba(0, 230, 118, 0.25) !important;
+        }
+
+        /* Wallet Balance Flash Animation */
+        @keyframes walletPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.12); color: #FFFFFF; text-shadow: 0 0 16px #00E676; }
+            100% { transform: scale(1); }
+        }
+        .wallet-flash {
+            animation: walletPulse 0.6s ease-out;
+        }
+
+        /* Live Indicator Pulse */
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(1.2); }
+        }
+        .live-dot {
+            animation: livePulse 1.4s ease-in-out infinite;
+        }
+
+        /* Shimmer effect on progress bars */
+        @keyframes barShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .animated-bar-green {
+            background: linear-gradient(90deg, #00B85C 0%, #00E676 50%, #69F0AE 75%, #00E676 100%);
+            background-size: 200% 100%;
+            animation: barShimmer 3s infinite linear;
+        }
+        .animated-bar-crimson {
+            background: linear-gradient(90deg, #D50000 0%, #FF1744 50%, #FF5252 75%, #FF1744 100%);
+            background-size: 200% 100%;
+            animation: barShimmer 3s infinite linear;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-apex-green selection:text-black">
+
+    <!-- 1. CONTINUOUSLY MOVING TOP SCORE TICKER BAR -->
+    <div class="w-full bg-[#05070B]/95 border-b border-white/10 h-10 flex items-center overflow-hidden relative z-40">
+        <!-- Fixed Left Live Badge -->
+        <div class="bg-gradient-to-r from-[#07090E] via-[#07090E] to-transparent z-20 px-4 h-full flex items-center space-x-2 border-r border-white/10 shrink-0">
+            <span class="w-2 h-2 rounded-full bg-apex-crimson live-dot shadow-[0_0_8px_#FF1744]"></span>
+            <span class="text-[11px] font-extrabold tracking-widest uppercase text-apex-crimson font-mono">LIVE WIRE</span>
+        </div>
+
+        <!-- Scrolling Ticker Track -->
+        <div class="overflow-hidden flex-1 flex items-center">
+            <div id="ticker-track" class="ticker-track items-center space-x-6 px-4 text-xs">
+                <!-- Populated dynamically via JS and duplicated for seamless loop -->
+            </div>
+        </div>
+
+        <!-- Fixed Right Odds Sync Status -->
+        <div class="hidden sm:flex bg-[#07090E] z-20 px-4 h-full items-center space-x-3 border-l border-white/10 shrink-0 text-[11px] text-slate-400">
+            <span class="flex items-center gap-1.5 text-apex-green font-mono">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i> 3.0s SYNC
+            </span>
+            <span class="text-slate-600">|</span>
+            <span class="font-mono text-white font-semibold">EUR (€)</span>
+        </div>
+    </div>
+
+    <!-- 2. STICKY LIQUID-GLASS HEADER -->
+    <header class="sticky top-0 z-30 liquid-glass border-b border-white/10 px-4 lg:px-8 h-16 flex items-center justify-between">
+        <!-- Brand Logo & Nav Links -->
+        <div class="flex items-center space-x-8">
+            <a href="#" onclick="return false;" class="flex items-center space-x-2.5 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-apex-green/20 to-apex-crimson/20 border border-apex-green/50 flex items-center justify-center shadow-[0_0_20px_rgba(0,230,118,0.25)] group-hover:scale-105 transition">
+                    <i data-lucide="zap" class="w-5 h-5 text-apex-green fill-apex-green"></i>
+                </div>
+                <div>
+                    <div class="flex items-center">
+                        <span class="text-xl font-black tracking-tight text-white">APEX</span>
+                        <span class="text-xl font-black tracking-tight text-apex-green">ODDS</span>
+                        <span class="ml-1.5 text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-apex-crimson/20 text-apex-crimson border border-apex-crimson/40 font-bold">PRO</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 -mt-1 font-mono tracking-wider">LIQUID SPORTSBOOK 2.0</p>
+                </div>
+            </a>
+
+            <!-- Main Nav Pills -->
+            <nav class="hidden md:flex items-center space-x-1 bg-black/40 p-1 rounded-xl border border-white/5">
+                <button onclick="filterCategory('all')" id="nav-all" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-apex-green text-black shadow-[0_0_15px_rgba(0,230,118,0.4)] transition flex items-center gap-1.5">
+                    <i data-lucide="flame" class="w-3.5 h-3.5"></i> All Live (6)
+                </button>
+                <button onclick="filterCategory('Football')" id="nav-Football" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5">
+                    <i data-lucide="dribbble" class="w-3.5 h-3.5 text-apex-green"></i> Domestic Leagues
+                </button>
+                <button onclick="filterCategory('Champions')" id="nav-Champions" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5">
+                    <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-400"></i> Euro Elite
+                </button>
+                <button onclick="runThreeSecondLiveCycle(true)" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-apex-crimson transition flex items-center gap-1.5" title="Force instant odds & ball update">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-apex-crimson"></i> Pulse Now
+                </button>
+            </nav>
+        </div>
+
+        <!-- Right Wallet & Sliding Bet Slip Trigger -->
+        <div class="flex items-center space-x-3">
+            <!-- User Balance Card (Starts at €1,000.00) -->
+            <div class="flex items-center bg-[#090D15] border border-white/10 rounded-xl px-3.5 py-1.5 space-x-3 shadow-inner">
+                <div>
+                    <div class="text-[10px] text-slate-400 uppercase font-mono">Wallet Balance</div>
+                    <div id="wallet-amount-wrapper" class="text-sm font-extrabold font-mono text-apex-green flex items-center">
+                        <span>€</span><span id="user-balance">1,000.00</span>
+                    </div>
+                </div>
+                <button onclick="depositDemoFunds()" class="w-7 h-7 rounded-lg bg-apex-green/15 hover:bg-apex-green text-apex-green hover:text-black border border-apex-green/40 flex items-center justify-center transition" title="Instant +€250 Top-Up">
+                    <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+                </button>
+            </div>
+
+            <!-- Toggle Bet Slip / Active Bets Button -->
+            <button onclick="toggleBetSlip()" class="relative flex items-center space-x-2.5 bg-gradient-to-r from-apex-green/20 to-apex-crimson/20 hover:from-apex-green/30 hover:to-apex-crimson/30 border border-apex-green/50 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-[0_0_20px_rgba(0,230,118,0.2)] transition">
+                <i data-lucide="ticket" class="w-4 h-4 text-apex-green"></i>
+                <span class="hidden sm:inline">Bet Slip</span>
+                <span id="slip-badge" class="px-2 py-0.5 text-[11px] font-mono font-extrabold rounded-full bg-apex-green text-black shadow-[0_0_10px_#00E676]">2</span>
+                <span id="active-bets-header-pill" class="hidden px-2 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-amber-400 text-black shadow-[0_0_10px_#FFAB00]">0 LIVE</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 3. MAIN CONTENT AREA -->
+    <div class="flex-1 flex relative overflow-hidden">
+        <!-- Center Scrollable Feed -->
+        <main id="main-content" class="flex-1 overflow-y-auto px-4 lg:px-8 py-6 transition-all duration-300">
+            <div class="max-w-7xl mx-auto space-y-8">
+
+                <!-- CENTERPIECE: ANIMATED 2D SOCCER PITCH & LIVE MATCH TRACKER -->
+                <section class="liquid-glass rounded-2xl p-4 lg:p-6 relative overflow-hidden border border-white/10">
+                    <!-- Ambient Glow Behind Pitch -->
+                    <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-2/3 h-48 bg-apex-green/10 blur-3xl pointer-events-none"></div>
+
+                    <!-- Match Header Bar -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 mb-5 border-b border-white/10">
+                        <div class="flex items-center space-x-3">
+                            <span class="px-2.5 py-1 rounded-md bg-apex-crimson/20 border border-apex-crimson/50 text-apex-crimson font-mono text-xs font-bold flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-apex-crimson live-dot"></span>
+                                LIVE 2D RADAR
+                            </span>
+                            <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-apex-green"></i>
+                                UEFA Champions League • Quarter-Final
+                            </span>
+                        </div>
+
+                        <!-- Interactive Pitch Controls -->
+                        <div class="flex items-center space-x-2">
+                            <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 bg-black/40 px-2.5 py-1 rounded-lg border border-white/5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-apex-green animate-ping"></span>
+                                Auto-Shift Every 3s
+                            </span>
+                            <button onclick="triggerGoalSimulation()" class="px-3 py-1.5 rounded-lg bg-apex-green/15 hover:bg-apex-green/25 text-apex-green border border-apex-green/40 text-xs font-bold flex items-center gap-1.5 transition shadow-[0_0_12px_rgba(0,230,118,0.2)]">
+                                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Simulate Attack
+                            </button>
+                            <button onclick="toggleRadarTrails()" id="btn-trails" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-medium flex items-center gap-1.5 transition">
+                                <i data-lucide="radio" class="w-3.5 h-3.5 text-apex-cyan"></i> Radar Rings: ON
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scoreboard + 2D Pitch + Live Momentum Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                        
+                        <!-- Left Column: Live Score & Animated Possession Bars (4 cols) -->
+                        <div class="lg:col-span-4 space-y-5">
+                            <!-- Teams & Score Card -->
+                            <div class="bg-[#070A10]/90 border border-white/10 rounded-2xl p-4 space-y-4">
+                                <!-- Match Clock -->
+                                <div class="flex items-center justify-between text-xs font-mono">
+                                    <span class="text-slate-400 flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-apex-green"></span>
+                                        2ND HALF • IN-PLAY
+                                    </span>
+                                    <span id="pitch-clock" class="px-2.5 py-0.5 rounded bg-apex-green/15 text-apex-green border border-apex-green/30 font-bold">67:42</span>
+                                </div>
+
+                                <!-- Home Team -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-xl bg-apex-green/15 border border-apex-green/50 flex items-center justify-center font-black text-apex-green text-sm shadow-[0_0_12px_rgba(0,230,118,0.2)]">
+                                            ARS
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-white text-sm flex items-center gap-1.5">
+                                                Arsenal FC
+                                                <span id="home-att-badge" class="text-[10px] px-1.5 py-0.5 rounded bg-apex-green/20 text-apex-green font-mono">ATK</span>
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 font-mono">xG: <span id="home-xg" class="text-apex-green">2.14</span> • Shots: <span id="home-shots">14</span></div>
+                                        </div>
+                                    </div>
+                                    <span id="pitch-home-score" class="text-3xl font-black font-mono text-white">2</span>
+                                </div>
+
+                                <!-- Away Team -->
+                                <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-xl bg-apex-crimson/15 border border-apex-crimson/50 flex items-center justify-center font-black text-apex-crimson text-sm shadow-[0_0_12px_rgba(255,23,68,0.2)]">
+                                            RMA
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-white text-sm flex items-center gap-1.5">
+                                                Real Madrid
+                                                <span id="away-att-badge" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-apex-crimson/20 text-apex-crimson font-mono">ATK</span>
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 font-mono">xG: <span id="away-xg" class="text-apex-crimson">1.68</span> • Shots: <span id="away-shots">9</span></div>
+                                        </div>
+                                    </div>
+                                    <span id="pitch-away-score" class="text-3xl font-black font-mono text-white">1</span>
+                                </div>
+                            </div>
+
+                            <!-- Live Animated Possession & Territory Bars -->
+                            <div class="bg-[#070A10]/90 border border-white/10 rounded-2xl p-4 space-y-4">
+                                <!-- Ball Possession Bar -->
+                                <div>
+                                    <div class="flex justify-between text-xs font-mono mb-1.5">
+                                        <span id="home-poss-text" class="text-apex-green font-bold">58%</span>
+                                        <span class="text-slate-400 uppercase tracking-wider text-[11px] font-semibold">Live Ball Possession</span>
+                                        <span id="away-poss-text" class="text-apex-crimson font-bold">42%</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden flex p-0.5 border border-white/10">
+                                        <div id="home-poss-bar" class="animated-bar-green h-full rounded-l-full transition-all duration-700 shadow-[0_0_12px_#00E676]" style="width: 58%"></div>
+                                        <div id="away-poss-bar" class="animated-bar-crimson h-full rounded-r-full transition-all duration-700 shadow-[0_0_12px_#FF1744]" style="width: 42%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Attacking Pressure Index Bar -->
+                                <div>
+                                    <div class="flex justify-between text-xs font-mono mb-1.5">
+                                        <span id="home-pressure-text" class="text-apex-green font-bold">64%</span>
+                                        <span class="text-slate-400 uppercase tracking-wider text-[11px] font-semibold">Attacking Threat Index</span>
+                                        <span id="away-pressure-text" class="text-apex-crimson font-bold">36%</span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden flex border border-white/10">
+                                        <div id="home-pressure-bar" class="bg-apex-green h-full transition-all duration-500" style="width: 64%"></div>
+                                        <div id="away-pressure-bar" class="bg-apex-crimson h-full transition-all duration-500" style="width: 36%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Telemetry Feed Pill -->
+                                <div class="flex items-center justify-between bg-black/50 border border-white/5 rounded-xl px-3 py-2 text-xs">
+                                    <span class="text-slate-400 font-mono">BALL SPEED:</span>
+                                    <span id="ball-speed-readout" class="font-mono font-bold text-apex-green">84.2 km/h</span>
+                                    <span class="text-slate-600">•</span>
+                                    <span id="zone-readout" class="font-mono font-bold text-amber-400">DANGER ZONE</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Center/Right Column: Animated 2D Soccer Pitch Canvas (8 cols) -->
+                        <div class="lg:col-span-8">
+                            <div class="relative rounded-2xl overflow-hidden border border-apex-green/30 bg-[#06130E] shadow-[0_0_50px_rgba(0,230,118,0.12)] aspect-[16/9] w-full">
+                                <!-- Pitch Canvas -->
+                                <canvas id="soccer-pitch-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                                <!-- Top Overlay HUD on Pitch -->
+                                <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                                    <div class="px-3 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-white/10 text-[11px] font-mono flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-apex-green animate-ping"></span>
+                                        <span id="pitch-event-banner" class="text-white font-semibold">ARSENAL BUILDING ATTACK IN FINAL THIRD</span>
+                                    </div>
+                                    <div class="hidden sm:block px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-white/10 text-[11px] font-mono text-slate-300">
+                                        Click pitch to pass • Auto-updates every 3s
+                                    </div>
+                                </div>
+
+                                <!-- Bottom Overlay HUD on Pitch -->
+                                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none text-[11px] font-mono">
+                                    <div class="px-2.5 py-1 rounded bg-apex-green/20 border border-apex-green/40 text-apex-green font-bold">
+                                        ← HOME: ARSENAL (4-3-3)
+                                    </div>
+                                    <div class="px-2.5 py-1 rounded bg-apex-crimson/20 border border-apex-crimson/40 text-apex-crimson font-bold">
+                                        AWAY: REAL MADRID (4-3-3) →
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- 4. GRID OF 6 LIVE MATCHES WITH PULSING ODDS BUTTONS -->
+                <section class="space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-black tracking-tight text-white flex items-center gap-2.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-apex-green shadow-[0_0_12px_#00E676]"></span>
+                                LIVE IN-PLAY MARKETS
+                                <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-white/5 text-apex-green border border-apex-green/30">3-SEC LIVE ODDS PULSE</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Click any odds button to add to your Bet Slip • Green flash = Odds drifting up • Red flash = Odds shortening</p>
+                        </div>
+
+                        <!-- Live Legend -->
+                        <div class="flex items-center space-x-4 text-xs font-mono">
+                            <span class="flex items-center gap-1.5 text-apex-green">
+                                <span class="w-2.5 h-2.5 rounded-sm bg-apex-green/30 border border-apex-green"></span> Odds Up ▲
+                            </span>
+                            <span class="flex items-center gap-1.5 text-apex-crimson">
+                                <span class="w-2.5 h-2.5 rounded-sm bg-apex-crimson/30 border border-apex-crimson"></span> Odds Down ▼
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 6 Live Matches Grid Container -->
+                    <div id="live-matches-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        <!-- Dynamically rendered via JavaScript -->
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- 5. SLEEK SLIDING BET SLIP & ACTIVE BETS PANEL ON THE RIGHT SIDE -->
+        <aside id="bet-slip-drawer" class="fixed lg:static top-16 right-0 bottom-0 z-30 w-80 sm:w-96 liquid-glass border-l border-white/10 flex flex-col transition-transform duration-300 ease-out translate-x-0">
+            
+            <!-- Drawer Top Navigation Tabs: Bet Slip vs Active Bets -->
+            <div class="p-3 border-b border-white/10 bg-[#080B12]/90">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="grid grid-cols-2 gap-1.5 bg-[#05070B] p-1 rounded-xl border border-white/10 flex-1">
+                        <button onclick="switchDrawerTab('slip')" id="tab-btn-slip" class="py-2 px-3 rounded-lg text-xs font-extrabold bg-apex-green text-black shadow-[0_0_15px_rgba(0,230,118,0.35)] transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                            <span>Bet Slip</span>
+                            <span id="slip-count-header" class="px-1.5 py-0.2 rounded-full bg-black/25 text-black font-mono text-[10px]">2</span>
+                        </button>
+                        <button onclick="switchDrawerTab('active')" id="tab-btn-active" class="py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5 relative">
+                            <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Active Bets</span>
+                            <span id="active-count-header" class="px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/40 font-mono text-[10px]">0</span>
+                        </button>
+                    </div>
+
+                    <button onclick="toggleBetSlip()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition shrink-0" title="Collapse Panel">
+                        <i data-lucide="panel-right-close" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ==================== VIEW 1: BET SLIP CALCULATOR ==================== -->
+            <div id="drawer-view-slip" class="flex-1 flex flex-col overflow-hidden">
+                <!-- Single / Multi-Parlay Mode Switcher + Clear -->
+                <div class="px-4 py-2.5 border-b border-white/10 bg-black/30 flex items-center justify-between gap-2">
+                    <div class="grid grid-cols-2 gap-1 bg-[#06080D] p-1 rounded-xl border border-white/5 flex-1">
+                        <button onclick="setSlipMode('single')" id="mode-single" class="py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">
+                            Single
+                        </button>
+                        <button onclick="setSlipMode('parlay')" id="mode-parlay" class="py-1.5 rounded-lg text-xs font-bold bg-apex-green text-black shadow-[0_0_12px_rgba(0,230,118,0.3)] transition">
+                            Multi / Parlay
+                        </button>
+                    </div>
+                    <button onclick="clearBetSlip()" class="text-[11px] text-slate-400 hover:text-apex-crimson px-2.5 py-1.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-apex-crimson/30 transition font-mono shrink-0">
+                        Clear
+                    </button>
+                </div>
+
+                <!-- Selected Bets List -->
+                <div id="bet-slip-items" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- Bet Slip Footer: Stake Input (+€10, +€25, +€50) & Payout Calculation -->
+                <div class="p-4 border-t border-white/10 bg-[#080B12]/95 space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span id="stake-label" class="text-slate-300 font-semibold">Total Parlay Stake (€)</span>
+                            <span class="font-mono text-apex-green text-[11px] flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-apex-green animate-ping"></span>
+                                Live Odds Sync
+                            </span>
+                        </div>
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3.5 text-apex-green font-mono font-extrabold">€</span>
+                            <input 
+                                type="number" 
+                                id="stake-input" 
+                                value="50" 
+                                min="1" 
+                                max="100000"
+                                step="5"
+                                oninput="updateBetSlipTotals()"
+                                class="w-full bg-[#0D1320] border border-white/15 focus:border-apex-green rounded-xl py-2.5 pl-8 pr-16 text-sm font-mono font-bold text-white outline-none transition"
+                            />
+                            <button onclick="setExactStake(0)" class="absolute right-2.5 text-[10px] font-mono uppercase px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition">
+                                Reset
+                            </button>
+                        </div>
+
+                        <!-- Quick Increment Stake Buttons (+€10, +€25, +€50, MAX) -->
+                        <div class="grid grid-cols-4 gap-2 mt-2">
+                            <button onclick="addQuickStake(10)" class="py-1.5 rounded-lg bg-white/5 hover:bg-apex-green/20 hover:border-apex-green/50 border border-white/10 text-xs font-mono font-bold text-slate-200 hover:text-apex-green transition">+€10</button>
+                            <button onclick="addQuickStake(25)" class="py-1.5 rounded-lg bg-white/5 hover:bg-apex-green/20 hover:border-apex-green/50 border border-white/10 text-xs font-mono font-bold text-slate-200 hover:text-apex-green transition">+€25</button>
+                            <button onclick="addQuickStake(50)" class="py-1.5 rounded-lg bg-white/5 hover:bg-apex-green/20 hover:border-apex-green/50 border border-white/10 text-xs font-mono font-bold text-slate-200 hover:text-apex-green transition">+€50</button>
+                            <button onclick="setMaxStake()" class="py-1.5 rounded-lg bg-apex-green/10 hover:bg-apex-green/25 border border-apex-green/30 text-xs font-mono font-bold text-apex-green transition">MAX</button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Breakdown -->
+                    <div class="space-y-1.5 text-xs bg-black/50 p-3.5 rounded-xl border border-white/10">
+                        <div class="flex justify-between text-slate-400">
+                            <span id="odds-summary-label">Combined Parlay Odds</span>
+                            <span id="total-odds" class="font-mono font-bold text-white">3.98</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Total Risk / Stake</span>
+                            <span id="total-stake-display" class="font-mono font-bold text-white">€50.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm pt-2 border-t border-white/10 items-baseline">
+                            <span class="font-bold text-slate-200">Potential Payout</span>
+                            <span id="potential-payout" class="font-mono font-black text-apex-green text-lg drop-shadow-[0_0_10px_rgba(0,230,118,0.45)]">€198.88</span>
+                        </div>
+                    </div>
+
+                    <!-- Place Bet CTA Button -->
+                    <button onclick="placeLiveBet()" id="place-bet-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-apex-green to-[#00C853] hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wide uppercase shadow-[0_0_25px_rgba(0,230,118,0.45)] transition flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.5]"></i>
+                        <span>Place Bet</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ==================== VIEW 2: ACTIVE BETS & LIVE CASH-OUT ==================== -->
+            <div id="drawer-view-active" class="hidden flex-1 flex flex-col overflow-hidden">
+                <!-- Subheader Banner -->
+                <div class="px-4 py-2.5 border-b border-white/10 bg-black/40 flex items-center justify-between text-[11px] font-mono">
+                    <span class="text-slate-300 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-apex-green live-dot"></span>
+                        LIVE CASH-OUT ENGINE
+                    </span>
+                    <span class="text-apex-green font-bold">INSTANT SETTLEMENT</span>
+                </div>
+
+                <!-- Active Tickets List -->
+                <div id="active-bets-items" class="flex-1 overflow-y-auto p-4 space-y-3.5">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- Active Bets Footer Summary -->
+                <div class="p-4 border-t border-white/10 bg-[#080B12]/95 space-y-3">
+                    <div class="flex items-center justify-between text-xs bg-black/50 p-3 rounded-xl border border-white/10">
+                        <span class="text-slate-400 font-medium">Total Live Cash-Out Value</span>
+                        <span id="total-cashout-portfolio" class="font-mono font-black text-base text-apex-green">€0.00</span>
+                    </div>
+                    <button onclick="cashOutAllActiveBets()" id="cashout-all-btn" class="w-full py-3 rounded-xl bg-white/5 hover:bg-apex-green hover:text-black text-apex-green border border-apex-green/40 font-extrabold text-xs tracking-wider uppercase transition flex items-center justify-center gap-2">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                        <span>Cash Out All Tickets</span>
+                    </button>
+                </div>
+            </div>
+
+        </aside>
+    </div>
+
+    <!-- Custom Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 left-5 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        // ==========================================
+        // 1. INITIAL DATA & APPLICATION STATE
+        // ==========================================
+        let userBalance = 1000.00; // Starting balance at €1,000.00
+        let slipMode = 'parlay';   // 'parlay' or 'single'
+        let activeDrawerTab = 'slip'; // 'slip' or 'active'
+        let isSlipOpen = true;
+        let activeCategory = 'all';
+
+        // Top Ticker Bar Live Matches
+        const tickerMatches = [
+            { league: 'UCL', home: 'ARS', away: 'RMA', score: '2 - 1', time: "68'", trend: '1.85', up: true },
+            { league: 'EPL', home: 'MCI', away: 'LIV', score: '2 - 2', time: "74'", trend: '2.15', up: false },
+            { league: 'LALIGA', home: 'BAR', away: 'ATM', score: '1 - 0', time: "53'", trend: '1.55', up: true },
+            { league: 'SERIE A', home: 'INT', away: 'JUV', score: '0 - 0', time: "39'", trend: '2.95', up: true },
+            { league: 'BUNDESLIGA', home: 'BAY', away: 'BVB', score: '3 - 1', time: "81'", trend: '1.24', up: false },
+            { league: 'LIGUE 1', home: 'PSG', away: 'MON', score: '2 - 0', time: "61'", trend: '1.38', up: true },
+            { league: 'UCL', home: 'MIL', away: 'NAP', score: '1 - 1', time: "45+2'", trend: '2.80', up: false }
+        ];
+
+        // 6 Live Matches Data for the Main Grid
+        const liveMatches = [
+            {
+                id: 'm1',
+                league: 'UEFA Champions League',
+                category: 'Champions',
+                minute: 67,
+                seconds: 42,
+                home: 'Arsenal FC',
+                homeShort: 'ARS',
+                away: 'Real Madrid',
+                awayShort: 'RMA',
+                homeScore: 2,
+                awayScore: 1,
+                possession: [58, 42],
+                odds: { home: 1.85, draw: 3.60, away: 4.20 }
+            },
+            {
+                id: 'm2',
+                league: 'Premier League • England',
+                category: 'Football',
+                minute: 74,
+                seconds: 15,
+                home: 'Manchester City',
+                homeShort: 'MCI',
+                away: 'Liverpool FC',
+                awayShort: 'LIV',
+                homeScore: 2,
+                awayScore: 2,
+                possession: [54, 46],
+                odds: { home: 2.15, draw: 3.10, away: 3.45 }
+            },
+            {
+                id: 'm3',
+                league: 'LaLiga • Spain',
+                category: 'Football',
+                minute: 53,
+                seconds: 08,
+                home: 'FC Barcelona',
+                homeShort: 'BAR',
+                away: 'Atlético Madrid',
+                awayShort: 'ATM',
+                homeScore: 1,
+                awayScore: 0,
+                possession: [63, 37],
+                odds: { home: 1.55, draw: 3.95, away: 6.10 }
+            },
+            {
+                id: 'm4',
+                league: 'Bundesliga • Germany',
+                category: 'Football',
+                minute: 81,
+                seconds: 29,
+                home: 'Bayern Munich',
+                homeShort: 'BAY',
+                away: 'Borussia Dortmund',
+                awayShort: 'BVB',
+                homeScore: 3,
+                awayScore: 1,
+                possession: [60, 40],
+                odds: { home: 1.24, draw: 5.80, away: 11.50 }
+            },
+            {
+                id: 'm5',
+                league: 'Serie A • Italy',
+                category: 'Champions',
+                minute: 39,
+                seconds: 50,
+                home: 'Inter Milan',
+                homeShort: 'INT',
+                away: 'Juventus',
+                awayShort: 'JUV',
+                homeScore: 0,
+                awayScore: 0,
+                possession: [51, 49],
+                odds: { home: 2.30, draw: 2.95, away: 3.40 }
+            },
+            {
+                id: 'm6',
+                league: 'Ligue 1 • France',
+                category: 'Champions',
+                minute: 61,
+                seconds: 19,
+                home: 'Paris Saint-Germain',
+                homeShort: 'PSG',
+                away: 'AS Monaco',
+                awayShort: 'MON',
+                homeScore: 2,
+                awayScore: 0,
+                possession: [66, 34],
+                odds: { home: 1.38, draw: 4.75, away: 8.20 }
+            }
+        ];
+
+        // Pre-loaded Bet Slip Selections
+        let betSlip = [
+            {
+                matchId: 'm1',
+                marketKey: 'home',
+                matchTitle: 'Arsenal FC vs Real Madrid',
+                selectionName: 'Arsenal FC (1X2)',
+                odds: 1.85
+            },
+            {
+                matchId: 'm2',
+                marketKey: 'home',
+                matchTitle: 'Manchester City vs Liverpool FC',
+                selectionName: 'Manchester City (1X2)',
+                odds: 2.15
+            }
+        ];
+
+        // Active Placed Bets List (Supports Live Cash Out)
+        let activeBets = [];
+
+        // Helper for formatting Euro amounts
+        function formatEuro(val) {
+            return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function updateWalletUI() {
+            const balEl = document.getElementById('user-balance');
+            const wrapEl = document.getElementById('wallet-amount-wrapper');
+            balEl.textContent = formatEuro(userBalance);
+            wrapEl.classList.remove('wallet-flash');
+            void wrapEl.offsetWidth;
+            wrapEl.classList.add('wallet-flash');
+        }
+
+        // ==========================================
+        // 2. TOP MOVING SCORE TICKER RENDERER
+        // ==========================================
+        function renderTicker() {
+            const track = document.getElementById('ticker-track');
+            const buildItems = () => tickerMatches.map(item => `
+                <div class="flex items-center space-x-2.5 bg-white/[0.03] border border-white/10 px-3 py-1 rounded-lg shrink-0">
+                    <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${item.league}</span>
+                    <span class="font-bold text-white">${item.home}</span>
+                    <span class="font-mono font-extrabold text-apex-green px-1.5 py-0.5 rounded bg-apex-green/10">${item.score}</span>
+                    <span class="font-bold text-white">${item.away}</span>
+                    <span class="text-[11px] font-mono text-slate-400">${item.time}</span>
+                    <span class="text-[11px] font-mono font-bold ${item.up ? 'text-apex-green' : 'text-apex-crimson'} flex items-center">
+                        ${item.up ? '▲' : '▼'} ${item.trend}
+                    </span>
+                </div>
+            `).join('');
+
+            track.innerHTML = buildItems() + buildItems();
+        }
+
+        // ==========================================
+        // 3. 2D SOCCER PITCH ANIMATION ENGINE
+        // ==========================================
+        const pitchCanvas = document.getElementById('soccer-pitch-canvas');
+        const ctx = pitchCanvas.getContext('2d');
+        let showRadarRings = true;
+
+        // Ball Physics & Radar Rings State
+        const ball = {
+            x: 0.62,
+            y: 0.48,
+            targetX: 0.78,
+            targetY: 0.35,
+            trail: [],
+            radarRings: []
+        };
+
+        // 10 Outfield Players (Normalized coordinates)
+        const players = [
+            // Home Team (Arsenal - Neon Green)
+            { team: 'home', x: 0.18, y: 0.25, baseX: 0.22, baseY: 0.25 },
+            { team: 'home', x: 0.20, y: 0.72, baseX: 0.22, baseY: 0.72 },
+            { team: 'home', x: 0.46, y: 0.32, baseX: 0.46, baseY: 0.32 },
+            { team: 'home', x: 0.52, y: 0.65, baseX: 0.52, baseY: 0.65 },
+            { team: 'home', x: 0.74, y: 0.46, baseX: 0.74, baseY: 0.46 },
+            // Away Team (Real Madrid - Crimson)
+            { team: 'away', x: 0.82, y: 0.28, baseX: 0.80, baseY: 0.28 },
+            { team: 'away', x: 0.80, y: 0.68, baseX: 0.80, baseY: 0.68 },
+            { team: 'away', x: 0.58, y: 0.48, baseX: 0.58, baseY: 0.48 },
+            { team: 'away', x: 0.42, y: 0.25, baseX: 0.42, baseY: 0.25 },
+            { team: 'away', x: 0.32, y: 0.55, baseX: 0.32, baseY: 0.55 }
+        ];
+
+        function resizePitchCanvas() {
+            const rect = pitchCanvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            pitchCanvas.width = rect.width * dpr;
+            pitchCanvas.height = rect.height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        window.addEventListener('resize', resizePitchCanvas);
+
+        // Pass ball to clicked location on pitch
+        pitchCanvas.addEventListener('click', (e) => {
+            const rect = pitchCanvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) / rect.width;
+            const clickY = (e.clientY - rect.top) / rect.height;
+            setNewBallTarget(
+                Math.max(0.06, Math.min(0.94, clickX)),
+                Math.max(0.08, Math.min(0.92, clickY)),
+                true
+            );
+        });
+
+        function setNewBallTarget(tx, ty, manual = false) {
+            ball.targetX = tx;
+            ball.targetY = ty;
+            // Emit expanding radar bursts on ball movement
+            ball.radarRings.push({ x: ball.x, y: ball.y, r: 4, alpha: 1.0 });
+            ball.radarRings.push({ x: tx, y: ty, r: 2, alpha: 0.85 });
+
+            // Update HUD Event Banner & Possession Bars
+            const banner = document.getElementById('pitch-event-banner');
+            const zoneReadout = document.getElementById('zone-readout');
+            const speedReadout = document.getElementById('ball-speed-readout');
+            const speed = (64 + Math.random() * 45).toFixed(1);
+            speedReadout.textContent = `${speed} km/h`;
+
+            if (tx > 0.66) {
+                banner.textContent = manual ? 'MANUAL THROUGH-BALL INTO MADRID BOX!' : 'ARSENAL DANGEROUS ATTACK — FINAL THIRD';
+                banner.className = 'text-apex-green font-bold';
+                zoneReadout.textContent = 'HIGH DANGER';
+                zoneReadout.className = 'font-mono font-bold text-apex-green';
+                document.getElementById('home-att-badge').classList.remove('hidden');
+                document.getElementById('away-att-badge').classList.add('hidden');
+            } else if (tx < 0.34) {
+                banner.textContent = manual ? 'COUNTER-ATTACK LAUNCHED BY REAL MADRID!' : 'REAL MADRID PRESSING HIGH IN ARSENAL BOX';
+                banner.className = 'text-apex-crimson font-bold';
+                zoneReadout.textContent = 'AWAY THREAT';
+                zoneReadout.className = 'font-mono font-bold text-apex-crimson';
+                document.getElementById('home-att-badge').classList.add('hidden');
+                document.getElementById('away-att-badge').classList.remove('hidden');
+            } else {
+                banner.textContent = 'MIDFIELD TACTICAL POSSESSION TRANSITION';
+                banner.className = 'text-slate-200 font-semibold';
+                zoneReadout.textContent = 'MIDFIELD';
+                zoneReadout.className = 'font-mono font-bold text-amber-400';
+            }
+
+            // Update Attacking Pressure Bar based on new ball target X
+            const homePress = Math.min(85, Math.max(20, Math.round(tx * 100)));
+            const awayPress = 100 - homePress;
+            document.getElementById('home-pressure-text').textContent = `${homePress}%`;
+            document.getElementById('away-pressure-text').textContent = `${awayPress}%`;
+            document.getElementById('home-pressure-bar').style.width = `${homePress}%`;
+            document.getElementById('away-pressure-bar').style.width = `${awayPress}%`;
+        }
+
+        function triggerGoalSimulation() {
+            const isHomeAttack = Math.random() > 0.35;
+            setNewBallTarget(isHomeAttack ? 0.92 : 0.08, 0.50, true);
+            showToast(isHomeAttack ? 'Arsenal fires a dangerous shot toward the top corner!' : 'Real Madrid counter-attack threatens the box!', 'info');
+        }
+
+        function toggleRadarTrails() {
+            showRadarRings = !showRadarRings;
+            const btn = document.getElementById('btn-trails');
+            btn.innerHTML = `<i data-lucide="radio" class="w-3.5 h-3.5 text-apex-cyan"></i> Radar Rings: ${showRadarRings ? 'ON' : 'OFF'}`;
+            lucide.createIcons();
+        }
+
+        let frameCount = 0;
+        function drawSoccerPitch() {
+            const width = pitchCanvas.clientWidth;
+            const height = pitchCanvas.clientHeight;
+            if (!width || !height) {
+                requestAnimationFrame(drawSoccerPitch);
+                return;
+            }
+
+            frameCount++;
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. Draw Turf Stripes
+            const stripeCount = 12;
+            const stripeWidth = width / stripeCount;
+            for (let i = 0; i < stripeCount; i++) {
+                ctx.fillStyle = i % 2 === 0 ? '#071912' : '#092017';
+                ctx.fillRect(i * stripeWidth, 0, stripeWidth, height);
+            }
+
+            // 2. Attacking Danger Zone Gradient Overlay
+            const attackGradient = ctx.createLinearGradient(0, 0, width, 0);
+            if (ball.x > 0.5) {
+                attackGradient.addColorStop(0, 'rgba(0, 230, 118, 0.0)');
+                attackGradient.addColorStop(1, 'rgba(0, 230, 118, 0.16)');
+            } else {
+                attackGradient.addColorStop(0, 'rgba(255, 23, 68, 0.16)');
+                attackGradient.addColorStop(1, 'rgba(255, 23, 68, 0.0)');
+            }
+            ctx.fillStyle = attackGradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // 3. Pitch Markings
+            const padX = width * 0.05;
+            const padY = height * 0.07;
+            const pitchW = width - padX * 2;
+            const pitchH = height - padY * 2;
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+            ctx.lineWidth = 1.5;
+
+            ctx.strokeRect(padX, padY, pitchW, pitchH);
+
+            // Halfway line
+            ctx.beginPath();
+            ctx.moveTo(width / 2, padY);
+            ctx.lineTo(width / 2, height - padY);
+            ctx.stroke();
+
+            // Center circle & spot
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, pitchH * 0.18, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Penalty Boxes
+            const boxW = pitchW * 0.15;
+            const boxH = pitchH * 0.52;
+            const boxY = (height - boxH) / 2;
+            ctx.strokeRect(padX, boxY, boxW, boxH);
+            ctx.strokeRect(width - padX - boxW, boxY, boxW, boxH);
+
+            // 6-Yard Goal Boxes
+            const goalBoxW = pitchW * 0.055;
+            const goalBoxH = pitchH * 0.26;
+            const goalBoxY = (height - goalBoxH) / 2;
+            ctx.strokeRect(padX, goalBoxY, goalBoxW, goalBoxH);
+            ctx.strokeRect(width - padX - goalBoxW, goalBoxY, goalBoxW, goalBoxH);
+
+            // 4. Update & Draw Simulated Players
+            players.forEach(p => {
+                const pullX = (ball.x - p.baseX) * 0.25;
+                const pullY = (ball.y - p.baseY) * 0.25;
+                p.x += ((p.baseX + pullX) - p.x) * 0.045;
+                p.y += ((p.baseY + pullY) - p.y) * 0.045;
+
+                const px = p.x * width;
+                const py = p.y * height;
+
+                ctx.beginPath();
+                ctx.arc(px, py, 11, 0, Math.PI * 2);
+                ctx.fillStyle = p.team === 'home' ? 'rgba(0, 230, 118, 0.18)' : 'rgba(255, 23, 68, 0.18)';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+                ctx.fillStyle = p.team === 'home' ? '#00E676' : '#FF1744';
+                ctx.fill();
+                ctx.strokeStyle = '#07090E';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            });
+
+            // 5. Smoothly Interpolate Ball Toward Current Target (Updated Every 3s or via Click)
+            const dx = ball.targetX - ball.x;
+            const dy = ball.targetY - ball.y;
+            ball.x += dx * 0.055;
+            ball.y += dy * 0.055;
+
+            const bx = ball.x * width;
+            const by = ball.y * height;
+
+            // Record Trail
+            ball.trail.push({ x: bx, y: by });
+            if (ball.trail.length > 24) ball.trail.shift();
+
+            // Draw Glowing Ball Trail
+            for (let i = 0; i < ball.trail.length; i++) {
+                const pt = ball.trail[i];
+                const ratio = i / ball.trail.length;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, ratio * 5, 0, Math.PI * 2);
+                ctx.fillStyle = ball.x > 0.5 
+                    ? `rgba(0, 230, 118, ${ratio * 0.45})` 
+                    : `rgba(255, 23, 68, ${ratio * 0.45})`;
+                ctx.fill();
+            }
+
+            // Draw Tactical Pass Line to Target
+            ctx.save();
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(ball.targetX * width, ball.targetY * height);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.restore();
+
+            // 6. Animated Radar Rings Around the Ball
+            if (showRadarRings) {
+                if (frameCount % 26 === 0) {
+                    ball.radarRings.push({ x: ball.x, y: ball.y, r: 6, alpha: 0.95 });
+                }
+
+                for (let i = ball.radarRings.length - 1; i >= 0; i--) {
+                    const ring = ball.radarRings[i];
+                    ring.r += 0.85;
+                    ring.alpha -= 0.018;
+
+                    if (ring.alpha <= 0) {
+                        ball.radarRings.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(ring.x * width, ring.y * height, ring.r, 0, Math.PI * 2);
+                    ctx.strokeStyle = ball.x > 0.5 
+                        ? `rgba(0, 230, 118, ${ring.alpha})` 
+                        : `rgba(255, 23, 68, ${ring.alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+
+            // 7. Draw Glowing Ball Core
+            ctx.save();
+            ctx.shadowColor = ball.x > 0.5 ? '#00E676' : '#FF1744';
+            ctx.shadowBlur = 18;
+            ctx.beginPath();
+            ctx.arc(bx, by, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = ball.x > 0.5 ? '#00E676' : '#FF1744';
+            ctx.stroke();
+            ctx.restore();
+
+            requestAnimationFrame(drawSoccerPitch);
+        }
+
+        // ==========================================
+        // 4. LIVE MATCHES GRID & 3-SECOND ODDS ENGINE
+        // ==========================================
+        function isSelectionInSlip(matchId, marketKey) {
+            return betSlip.some(item => item.matchId === matchId && item.marketKey === marketKey);
+        }
+
+        function renderMatchesGrid() {
+            const grid = document.getElementById('live-matches-grid');
+            const filtered = activeCategory === 'all' 
+                ? liveMatches 
+                : liveMatches.filter(m => m.category === activeCategory);
+
+            grid.innerHTML = filtered.map(match => {
+                const homeSel = isSelectionInSlip(match.id, 'home') ? 'odds-selected' : '';
+                const drawSel = isSelectionInSlip(match.id, 'draw') ? 'odds-selected' : '';
+                const awaySel = isSelectionInSlip(match.id, 'away') ? 'odds-selected' : '';
+                const clockStr = `${match.minute}:${match.seconds.toString().padStart(2, '0')}`;
+
+                return `
+                <article class="liquid-glass-interactive rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                    <!-- Top Header: League & Live Clock -->
+                    <div class="flex items-center justify-between text-xs border-b border-white/10 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-apex-green live-dot"></span>
+                            <span class="text-slate-300 font-semibold truncate max-w-[180px]">${match.league}</span>
+                        </div>
+                        <span id="clock-${match.id}" class="px-2 py-0.5 rounded bg-apex-crimson/15 text-apex-crimson border border-apex-crimson/30 font-mono font-bold">
+                            ${clockStr}
+                        </span>
+                    </div>
+
+                    <!-- Teams & Live Scores -->
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-mono text-[11px] font-bold text-apex-green">
+                                    ${match.homeShort}
+                                </span>
+                                <span class="font-bold text-white text-sm">${match.home}</span>
+                            </div>
+                            <span class="font-mono font-black text-lg text-white bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/10">
+                                ${match.homeScore}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-mono text-[11px] font-bold text-apex-crimson">
+                                    ${match.awayShort}
+                                </span>
+                                <span class="font-bold text-white text-sm">${match.away}</span>
+                            </div>
+                            <span class="font-mono font-black text-lg text-white bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/10">
+                                ${match.awayScore}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Possession Bar inside Match Card -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400">
+                            <span id="poss-home-txt-${match.id}" class="text-apex-green">${match.possession[0]}% POSS</span>
+                            <span id="poss-away-txt-${match.id}" class="text-apex-crimson">${match.possession[1]}% POSS</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden flex">
+                            <div id="poss-home-bar-${match.id}" class="bg-apex-green h-full transition-all duration-500" style="width: ${match.possession[0]}%"></div>
+                            <div id="poss-away-bar-${match.id}" class="bg-apex-crimson h-full transition-all duration-500" style="width: ${match.possession[1]}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 1X2 Odds Buttons Row (Home, Draw, Away) -->
+                    <div class="grid grid-cols-3 gap-2.5 pt-1">
+                        <!-- Home Button -->
+                        <button 
+                            id="btn-${match.id}-home"
+                            onclick="toggleBetSelection('${match.id}', 'home', '${match.home} vs ${match.away}', '${match.home} (1X2)')"
+                            class="bg-[#0F1523]/90 hover:border-apex-green/60 border border-white/10 rounded-xl p-2.5 flex flex-col items-center justify-center transition relative overflow-hidden group ${homeSel}">
+                            <div class="flex items-center justify-between w-full text-[10px] font-mono text-slate-400 mb-0.5">
+                                <span>1</span>
+                                <span id="ind-${match.id}-home" class="font-bold"></span>
+                            </div>
+                            <span id="val-${match.id}-home" class="font-mono font-extrabold text-sm text-white group-hover:text-apex-green transition">
+                                ${match.odds.home.toFixed(2)}
+                            </span>
+                        </button>
+
+                        <!-- Draw Button -->
+                        <button 
+                            id="btn-${match.id}-draw"
+                            onclick="toggleBetSelection('${match.id}', 'draw', '${match.home} vs ${match.away}', 'Draw (1X2)')"
+                            class="bg-[#0F1523]/90 hover:border-apex-green/60 border border-white/10 rounded-xl p-2.5 flex flex-col items-center justify-center transition relative overflow-hidden group ${drawSel}">
+                            <div class="flex items-center justify-between w-full text-[10px] font-mono text-slate-400 mb-0.5">
+                                <span>X</span>
+                                <span id="ind-${match.id}-draw" class="font-bold"></span>
+                            </div>
+                            <span id="val-${match.id}-draw" class="font-mono font-extrabold text-sm text-white group-hover:text-apex-green transition">
+                                ${match.odds.draw.toFixed(2)}
+                            </span>
+                        </button>
+
+                        <!-- Away Button -->
+                        <button 
+                            id="btn-${match.id}-away"
+                            onclick="toggleBetSelection('${match.id}', 'away', '${match.home} vs ${match.away}', '${match.away} (1X2)')"
+                            class="bg-[#0F1523]/90 hover:border-apex-green/60 border border-white/10 rounded-xl p-2.5 flex flex-col items-center justify-center transition relative overflow-hidden group ${awaySel}">
+                            <div class="flex items-center justify-between w-full text-[10px] font-mono text-slate-400 mb-0.5">
+                                <span>2</span>
+                                <span id="ind-${match.id}-away" class="font-bold"></span>
+                            </div>
+                            <span id="val-${match.id}-away" class="font-mono font-extrabold text-sm text-white group-hover:text-apex-green transition">
+                                ${match.odds.away.toFixed(2)}
+                            </span>
+                        </button>
+                    </div>
+                </article>
+                `;
+            }).join('');
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            ['all', 'Football', 'Champions'].forEach(c => {
+                const btn = document.getElementById(`nav-${c}`);
+                if (!btn) return;
+                if (c === cat) {
+                    btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-apex-green text-black shadow-[0_0_15px_rgba(0,230,118,0.4)] transition flex items-center gap-1.5';
+                } else {
+                    btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5';
+                }
+            });
+            renderMatchesGrid();
+            lucide.createIcons();
+        }
+
+        function pulseOddsButton(matchId, marketKey, direction, newValue) {
+            const btn = document.getElementById(`btn-${matchId}-${marketKey}`);
+            const valEl = document.getElementById(`val-${matchId}-${marketKey}`);
+            const indEl = document.getElementById(`ind-${matchId}-${marketKey}`);
+            if (!btn || !valEl || !indEl) return;
+
+            valEl.textContent = newValue.toFixed(2);
+
+            btn.classList.remove('odds-flash-up', 'odds-flash-down');
+            void btn.offsetWidth;
+
+            if (direction === 'up') {
+                btn.classList.add('odds-flash-up');
+                indEl.textContent = '▲';
+                indEl.className = 'font-bold text-apex-green';
+                valEl.classList.add('text-apex-green');
+            } else {
+                btn.classList.add('odds-flash-down');
+                indEl.textContent = '▼';
+                indEl.className = 'font-bold text-apex-crimson';
+                valEl.classList.add('text-apex-crimson');
+            }
+
+            setTimeout(() => {
+                valEl.classList.remove('text-apex-green', 'text-apex-crimson');
+            }, 1500);
+        }
+
+        // MASTER 3-SECOND CYCLE: Flashes random odds, moves ball on 2D pitch, updates timers & active cash-outs
+        function runThreeSecondLiveCycle(manualTrigger = false) {
+            const keys = ['home', 'draw', 'away'];
+            // 1. Change 5 to 8 random odds across the 6 matches & flash buttons green (up) or red (down)
+            const count = 5 + Math.floor(Math.random() * 4);
+            let slipUpdated = false;
+
+            for (let i = 0; i < count; i++) {
+                const match = liveMatches[Math.floor(Math.random() * liveMatches.length)];
+                const key = keys[Math.floor(Math.random() * keys.length)];
+                const delta = (Math.random() * 0.16 + 0.04) * (Math.random() > 0.48 ? 1 : -1);
+                const nextVal = Math.max(1.12, Math.min(18.0, match.odds[key] + delta));
+                const direction = nextVal >= match.odds[key] ? 'up' : 'down';
+                match.odds[key] = Number(nextVal.toFixed(2));
+
+                pulseOddsButton(match.id, key, direction, match.odds[key]);
+
+                // Sync live odds inside Bet Slip if selected
+                const slipItem = betSlip.find(s => s.matchId === match.id && s.marketKey === key);
+                if (slipItem) {
+                    slipItem.odds = match.odds[key];
+                    slipUpdated = true;
+                }
+            }
+
+            if (slipUpdated) {
+                renderBetSlip();
+            }
+
+            // 2. Move the ball to a new tactical position on the 2D soccer pitch
+            const nextBallX = 0.10 + Math.random() * 0.80;
+            const nextBallY = 0.12 + Math.random() * 0.76;
+            setNewBallTarget(nextBallX, nextBallY, false);
+
+            // 3. Update live possession bars & match clocks
+            liveMatches.forEach(m => {
+                const shift = Math.random() > 0.5 ? 1 : -1;
+                m.possession[0] = Math.min(72, Math.max(35, m.possession[0] + shift));
+                m.possession[1] = 100 - m.possession[0];
+
+                const hTxt = document.getElementById(`poss-home-txt-${m.id}`);
+                const aTxt = document.getElementById(`poss-away-txt-${m.id}`);
+                const hBar = document.getElementById(`poss-home-bar-${m.id}`);
+                const aBar = document.getElementById(`poss-away-bar-${m.id}`);
+                if (hTxt && aTxt && hBar && aBar) {
+                    hTxt.textContent = `${m.possession[0]}% POSS`;
+                    aTxt.textContent = `${m.possession[1]}% POSS`;
+                    hBar.style.width = `${m.possession[0]}%`;
+                    aBar.style.width = `${m.possession[1]}%`;
+                }
+            });
+
+            // Sync Centerpiece Pitch Possession Bars with Match 1
+            const mainHomePoss = liveMatches[0].possession[0];
+            const mainAwayPoss = liveMatches[0].possession[1];
+            document.getElementById('home-poss-text').textContent = `${mainHomePoss}%`;
+            document.getElementById('away-poss-text').textContent = `${mainAwayPoss}%`;
+            document.getElementById('home-poss-bar').style.width = `${mainHomePoss}%`;
+            document.getElementById('away-poss-bar').style.width = `${mainAwayPoss}%`;
+
+            // 4. Recalculate dynamic Live Cash-Out values for any Active Bets
+            if (activeBets.length > 0) {
+                updateActiveBetsLiveCashOut();
+            }
+
+            if (manualTrigger) {
+                showToast('Live odds, 2D pitch radar & cash-out offers synced!', 'info');
+            }
+        }
+
+        // ==========================================
+        // 5. WORKING BET SLIP CALCULATOR & ACTIVE BETS CASH-OUT
+        // ==========================================
+        function toggleBetSlip() {
+            isSlipOpen = !isSlipOpen;
+            const drawer = document.getElementById('bet-slip-drawer');
+            if (isSlipOpen) {
+                drawer.classList.remove('translate-x-full', 'hidden');
+                drawer.classList.add('translate-x-0');
+            } else {
+                drawer.classList.remove('translate-x-0');
+                drawer.classList.add('translate-x-full', 'hidden');
+            }
+        }
+
+        function switchDrawerTab(tab) {
+            activeDrawerTab = tab;
+            const slipView = document.getElementById('drawer-view-slip');
+            const activeView = document.getElementById('drawer-view-active');
+            const slipBtn = document.getElementById('tab-btn-slip');
+            const activeBtn = document.getElementById('tab-btn-active');
+            const slipCount = document.getElementById('slip-count-header');
+
+            if (tab === 'slip') {
+                slipView.classList.remove('hidden');
+                activeView.classList.add('hidden');
+                slipBtn.className = 'py-2 px-3 rounded-lg text-xs font-extrabold bg-apex-green text-black shadow-[0_0_15px_rgba(0,230,118,0.35)] transition flex items-center justify-center gap-1.5';
+                slipCount.className = 'px-1.5 py-0.2 rounded-full bg-black/25 text-black font-mono text-[10px]';
+                activeBtn.className = 'py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5 relative';
+            } else {
+                slipView.classList.add('hidden');
+                activeView.classList.remove('hidden');
+                activeBtn.className = 'py-2 px-3 rounded-lg text-xs font-extrabold bg-amber-400 text-black shadow-[0_0_15px_rgba(255,171,0,0.35)] transition flex items-center justify-center gap-1.5 relative';
+                slipBtn.className = 'py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5';
+                slipCount.className = 'px-1.5 py-0.2 rounded-full bg-white/10 text-slate-300 font-mono text-[10px]';
+                renderActiveBets();
+            }
+            lucide.createIcons();
+        }
+
+        function toggleBetSelection(matchId, marketKey, matchTitle, selectionName) {
+            const matchObj = liveMatches.find(m => m.id === matchId);
+            if (!matchObj) return;
+
+            const existingIndex = betSlip.findIndex(item => item.matchId === matchId && item.marketKey === marketKey);
+
+            if (existingIndex > -1) {
+                betSlip.splice(existingIndex, 1);
+                showToast(`Removed ${selectionName} from Bet Slip`, 'neutral');
+            } else {
+                // Replace if another outcome from the same match was already selected
+                const sameMatchIdx = betSlip.findIndex(item => item.matchId === matchId);
+                if (sameMatchIdx > -1) {
+                    betSlip.splice(sameMatchIdx, 1);
+                }
+                betSlip.push({
+                    matchId,
+                    marketKey,
+                    matchTitle,
+                    selectionName,
+                    odds: matchObj.odds[marketKey]
+                });
+                showToast(`Added ${selectionName} @ ${matchObj.odds[marketKey].toFixed(2)}`, 'success');
+                if (!isSlipOpen) toggleBetSlip();
+                if (activeDrawerTab !== 'slip') switchDrawerTab('slip');
+            }
+
+            renderMatchesGrid();
+            renderBetSlip();
+        }
+
+        function removeSlipItem(index) {
+            betSlip.splice(index, 1);
+            renderMatchesGrid();
+            renderBetSlip();
+        }
+
+        function clearBetSlip() {
+            betSlip = [];
+            renderMatchesGrid();
+            renderBetSlip();
+            showToast('Bet slip cleared', 'neutral');
+        }
+
+        function setSlipMode(mode) {
+            slipMode = mode;
+            const parlayBtn = document.getElementById('mode-parlay');
+            const singleBtn = document.getElementById('mode-single');
+            const stakeLabel = document.getElementById('stake-label');
+            const oddsSummaryLabel = document.getElementById('odds-summary-label');
+
+            if (mode === 'parlay') {
+                parlayBtn.className = 'py-1.5 rounded-lg text-xs font-bold bg-apex-green text-black shadow-[0_0_12px_rgba(0,230,118,0.3)] transition';
+                singleBtn.className = 'py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+                stakeLabel.textContent = 'Total Parlay Stake (€)';
+                oddsSummaryLabel.textContent = 'Combined Parlay Odds';
+            } else {
+                singleBtn.className = 'py-1.5 rounded-lg text-xs font-bold bg-apex-green text-black shadow-[0_0_12px_rgba(0,230,118,0.3)] transition';
+                parlayBtn.className = 'py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+                stakeLabel.textContent = 'Stake Per Single Bet (€)';
+                oddsSummaryLabel.textContent = 'Sum of Single Odds';
+            }
+            updateBetSlipTotals();
+        }
+
+        // Increment stake by +€10, +€25, +€50
+        function addQuickStake(increment) {
+            const input = document.getElementById('stake-input');
+            const current = parseFloat(input.value) || 0;
+            input.value = (current + increment).toFixed(0);
+            updateBetSlipTotals();
+        }
+
+        function setExactStake(amount) {
+            document.getElementById('stake-input').value = amount;
+            updateBetSlipTotals();
+        }
+
+        function setMaxStake() {
+            if (betSlip.length === 0) return;
+            const maxAllowed = slipMode === 'parlay' 
+                ? Math.floor(userBalance) 
+                : Math.floor(userBalance / betSlip.length);
+            document.getElementById('stake-input').value = Math.max(0, maxAllowed);
+            updateBetSlipTotals();
+        }
+
+        function renderBetSlip() {
+            const container = document.getElementById('bet-slip-items');
+            const badge = document.getElementById('slip-badge');
+            const headerCount = document.getElementById('slip-count-header');
+
+            badge.textContent = betSlip.length;
+            headerCount.textContent = betSlip.length;
+
+            if (betSlip.length === 0) {
+                container.innerHTML = `
+                    <div class="h-56 flex flex-col items-center justify-center text-center px-4 text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-slate-400">
+                            <i data-lucide="ticket" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-300">Your Bet Slip is Empty</p>
+                        <p class="text-[11px] text-slate-500 mt-1">Click any odds button (Home, Draw, Away) on the live match cards to build your ticket.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = betSlip.map((item, idx) => `
+                    <div class="bg-[#0B101B] border border-white/10 hover:border-apex-green/40 rounded-xl p-3 relative group transition">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="text-[10px] font-mono text-slate-400 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-apex-green"></span>
+                                    ${item.matchTitle}
+                                </div>
+                                <div class="text-xs font-bold text-white mt-0.5">${item.selectionName}</div>
+                            </div>
+                            <button onclick="removeSlipItem(${idx})" class="text-slate-500 hover:text-apex-crimson p-1 rounded transition" title="Remove selection">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-white/5 text-xs">
+                            <span class="text-[10px] font-mono text-apex-green bg-apex-green/10 px-2 py-0.5 rounded border border-apex-green/30">LIVE 1X2</span>
+                            <span class="font-mono font-extrabold text-sm text-apex-green">@ ${item.odds.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            lucide.createIcons();
+            updateBetSlipTotals();
+        }
+
+        function updateBetSlipTotals() {
+            const stakeInput = Math.max(0, parseFloat(document.getElementById('stake-input').value) || 0);
+            const totalOddsEl = document.getElementById('total-odds');
+            const totalStakeEl = document.getElementById('total-stake-display');
+            const payoutEl = document.getElementById('potential-payout');
+
+            if (betSlip.length === 0) {
+                totalOddsEl.textContent = '0.00';
+                totalStakeEl.textContent = '€0.00';
+                payoutEl.textContent = '€0.00';
+                return;
+            }
+
+            let combinedOdds = 1;
+            let totalStake = stakeInput;
+
+            if (slipMode === 'parlay') {
+                combinedOdds = betSlip.reduce((acc, item) => acc * item.odds, 1);
+            } else {
+                combinedOdds = betSlip.reduce((acc, item) => acc + item.odds, 0);
+                totalStake = stakeInput * betSlip.length;
+            }
+
+            const payout = stakeInput * combinedOdds;
+            totalOddsEl.textContent = combinedOdds.toFixed(2);
+            totalStakeEl.textContent = `€${formatEuro(totalStake)}`;
+            payoutEl.textContent = `€${formatEuro(payout)}`;
+        }
+
+        // PLACE BET: Deducts from €1,000.00 wallet, shoots confetti, moves ticket into "Active Bets" with live Cash Out
+        function placeLiveBet() {
+            if (betSlip.length === 0) {
+                showToast('Click at least one odds button to add a selection first!', 'error');
+                return;
+            }
+
+            const rawStake = parseFloat(document.getElementById('stake-input').value) || 0;
+            const totalStake = slipMode === 'parlay' ? rawStake : rawStake * betSlip.length;
+
+            if (totalStake <= 0) {
+                showToast('Please enter a valid stake amount greater than €0.', 'error');
+                return;
+            }
+
+            if (totalStake > userBalance) {
+                showToast('Insufficient wallet balance! Click + next to your wallet to top up.', 'error');
+                return;
+            }
+
+            // Calculate combined odds & potential payout
+            const combinedOdds = slipMode === 'parlay'
+                ? betSlip.reduce((acc, item) => acc * item.odds, 1)
+                : betSlip.reduce((acc, item) => acc + item.odds, 0);
+            const potentialPayout = rawStake * combinedOdds;
+
+            // Subtract stake from wallet balance
+            userBalance = Number((userBalance - totalStake).toFixed(2));
+            updateWalletUI();
+
+            // Create new Active Bet Ticket with live Cash-Out Offer
+            const newTicket = {
+                id: 'BET-' + Math.floor(100000 + Math.random() * 900000),
+                mode: slipMode === 'parlay' ? (betSlip.length > 1 ? `${betSlip.length}-Fold Parlay` : 'Single Live') : `${betSlip.length}x Singles`,
+                selections: JSON.parse(JSON.stringify(betSlip)),
+                stake: totalStake,
+                entryOdds: Number(combinedOdds.toFixed(2)),
+                currentOdds: Number(combinedOdds.toFixed(2)),
+                potentialPayout: Number(potentialPayout.toFixed(2)),
+                cashOutValue: Number((totalStake * 0.96).toFixed(2)), // Starts at 96% of stake and fluctuates with live odds
+                placedAt: document.getElementById('pitch-clock').textContent
+            };
+
+            activeBets.unshift(newTicket);
+
+            // Clear current Bet Slip & unhighlight match odds buttons
+            betSlip = [];
+            renderMatchesGrid();
+            renderBetSlip();
+            updateActiveBetsBadges();
+
+            // Shoot Canvas Confetti across the screen
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 85,
+                    origin: { x: 0.75, y: 0.65 },
+                    colors: ['#00E676', '#FF1744', '#FFFFFF', '#FFAB00']
+                });
+            }
+
+            showToast(`Bet Placed (-€${formatEuro(totalStake)})! Moved to Active Bets.`, 'success');
+
+            // Automatically switch to the "Active Bets" tab so user can see and click "Cash Out Now"
+            switchDrawerTab('active');
+        }
+
+        // Update Live Cash-Out values every 3 seconds based on live match odds drift
+        function updateActiveBetsLiveCashOut() {
+            activeBets.forEach(ticket => {
+                // Compare entry odds vs current live odds for the selections
+                let liveMultiplier = 1;
+                ticket.selections.forEach(sel => {
+                    const m = liveMatches.find(match => match.id === sel.matchId);
+                    if (m) {
+                        const currentOdd = m.odds[sel.marketKey];
+                        // If live odds shortened (went down), probability increased -> Cash Out value rises!
+                        const ratio = sel.odds / currentOdd;
+                        liveMultiplier *= ratio;
+                    }
+                });
+
+                // Add a small live momentum variance so Cash Out visibly ticks every 3s
+                const jitter = 0.97 + Math.random() * 0.09;
+                const rawOffer = ticket.stake * liveMultiplier * jitter;
+                ticket.cashOutValue = Number(Math.min(ticket.potentialPayout * 0.98, Math.max(ticket.stake * 0.35, rawOffer)).toFixed(2));
+            });
+
+            if (activeDrawerTab === 'active') {
+                renderActiveBets();
+            }
+        }
+
+        function updateActiveBetsBadges() {
+            const count = activeBets.length;
+            document.getElementById('active-count-header').textContent = count;
+            const headerPill = document.getElementById('active-bets-header-pill');
+            if (count > 0) {
+                headerPill.textContent = `${count} LIVE`;
+                headerPill.classList.remove('hidden');
+            } else {
+                headerPill.classList.add('hidden');
+            }
+        }
+
+        function renderActiveBets() {
+            const container = document.getElementById('active-bets-items');
+            const portfolioEl = document.getElementById('total-cashout-portfolio');
+            updateActiveBetsBadges();
+
+            const totalPortfolio = activeBets.reduce((sum, t) => sum + t.cashOutValue, 0);
+            portfolioEl.textContent = `€${formatEuro(totalPortfolio)}`;
+
+            if (activeBets.length === 0) {
+                container.innerHTML = `
+                    <div class="h-60 flex flex-col items-center justify-center text-center px-4 text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 text-slate-400">
+                            <i data-lucide="activity" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-300">No Active Live Bets</p>
+                        <p class="text-[11px] text-slate-500 mt-1">Select any odds on the screen and click "Place Bet" to track live Cash-Out offers here.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = activeBets.map(ticket => {
+                const profitDiff = ticket.cashOutValue - ticket.stake;
+                const isProfit = profitDiff >= 0;
+
+                return `
+                <div class="bg-[#0B101B] border border-apex-green/35 rounded-2xl p-3.5 space-y-3 shadow-[0_8px_25px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                    <!-- Ticket Header -->
+                    <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-apex-green live-dot"></span>
+                            <span class="text-[11px] font-mono font-extrabold text-white">${ticket.mode}</span>
+                            <span class="text-[10px] font-mono text-slate-500">#${ticket.id}</span>
+                        </div>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-apex-green/15 text-apex-green border border-apex-green/30 font-bold">
+                            ODD @ ${ticket.entryOdds.toFixed(2)}
+                        </span>
+                    </div>
+
+                    <!-- Selections List -->
+                    <div class="space-y-1.5">
+                        ${ticket.selections.map(sel => `
+                            <div class="flex items-center justify-between text-xs bg-black/40 px-2.5 py-1.5 rounded-lg border border-white/5">
+                                <div>
+                                    <div class="font-bold text-white text-[11px]">${sel.selectionName}</div>
+                                    <div class="text-[10px] text-slate-400 font-mono">${sel.matchTitle}</div>
+                                </div>
+                                <span class="font-mono font-bold text-apex-green text-xs">${sel.odds.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Stake & Potential Payout Row -->
+                    <div class="grid grid-cols-2 gap-2 bg-black/50 p-2.5 rounded-xl border border-white/5 text-[11px]">
+                        <div>
+                            <div class="text-slate-400">Stake Risked</div>
+                            <div class="font-mono font-bold text-white text-xs">€${formatEuro(ticket.stake)}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-slate-400">Max Payout</div>
+                            <div class="font-mono font-extrabold text-apex-green text-xs">€${formatEuro(ticket.potentialPayout)}</div>
+                        </div>
+                    </div>
+
+                    <!-- Working Live Cash Out Now Button -->
+                    <button 
+                        onclick="cashOutSingleBet('${ticket.id}')"
+                        class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-apex-green to-[#00C853] hover:brightness-110 active:scale-[0.98] text-black font-black text-xs uppercase tracking-wide shadow-[0_0_20px_rgba(0,230,118,0.35)] transition flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="zap" class="w-4 h-4 fill-black"></i>
+                            <span>Cash Out Now</span>
+                        </span>
+                        <span class="font-mono text-sm bg-black/20 px-2 py-0.5 rounded-lg">
+                            €${formatEuro(ticket.cashOutValue)}
+                            <span class="text-[10px] ${isProfit ? 'text-black' : 'text-black/80'}">(${isProfit ? '+' : ''}€${profitDiff.toFixed(2)})</span>
+                        </span>
+                    </button>
+                </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // WORKING CASH-OUT HANDLER: Adds cash-out money back to Wallet & triggers confetti
+        function cashOutSingleBet(ticketId) {
+            const idx = activeBets.findIndex(t => t.id === ticketId);
+            if (idx === -1) return;
+
+            const ticket = activeBets[idx];
+            const payoutAmount = ticket.cashOutValue;
+
+            // Add money back to user's wallet
+            userBalance = Number((userBalance + payoutAmount).toFixed(2));
+            updateWalletUI();
+
+            // Remove ticket from Active Bets
+            activeBets.splice(idx, 1);
+            renderActiveBets();
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 70,
+                    spread: 65,
+                    origin: { x: 0.85, y: 0.5 },
+                    colors: ['#00E676', '#FFFFFF', '#FFAB00']
+                });
+            }
+
+            showToast(`Cashed Out +€${formatEuro(payoutAmount)} directly to your Wallet!`, 'success');
+        }
+
+        function cashOutAllActiveBets() {
+            if (activeBets.length === 0) {
+                showToast('No active bets to cash out.', 'neutral');
+                return;
+            }
+
+            const totalReturn = activeBets.reduce((sum, t) => sum + t.cashOutValue, 0);
+            userBalance = Number((userBalance + totalReturn).toFixed(2));
+            updateWalletUI();
+
+            activeBets = [];
+            renderActiveBets();
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 110,
+                    spread: 90,
+                    origin: { x: 0.8, y: 0.6 },
+                    colors: ['#00E676', '#FFAB00', '#FFFFFF']
+                });
+            }
+
+            showToast(`All Tickets Cashed Out! +€${formatEuro(totalReturn)} added to Wallet.`, 'success');
+        }
+
+        function depositDemoFunds() {
+            userBalance = Number((userBalance + 250).toFixed(2));
+            updateWalletUI();
+            showToast('+€250.00 Instant Demo Top-Up Added to Wallet!', 'success');
+        }
+
+        // ==========================================
+        // 6. TOAST NOTIFICATIONS & TIMERS (1S CLOCK + 3S ODDS/PITCH)
+        // ==========================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const borderColors = {
+                success: 'border-apex-green text-apex-green',
+                error: 'border-apex-crimson text-apex-crimson',
+                info: 'border-apex-cyan text-apex-cyan',
+                neutral: 'border-white/20 text-slate-200'
+            };
+
+            toast.className = `liquid-glass px-4 py-3 rounded-xl border-l-4 ${borderColors[type] || borderColors.success} text-xs font-bold shadow-2xl flex items-center space-x-2.5 transition-all duration-300`;
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full bg-current"></span>
+                <span class="text-white">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // 1-Second Match Timer Incrementer (Updates main pitch clock + all 6 live match clocks)
+        setInterval(() => {
+            liveMatches.forEach((m, index) => {
+                m.seconds++;
+                if (m.seconds >= 60) {
+                    m.seconds = 0;
+                    m.minute++;
+                }
+                const formattedClock = `${m.minute}:${m.seconds.toString().padStart(2, '0')}`;
+                const cardClockEl = document.getElementById(`clock-${m.id}`);
+                if (cardClockEl) cardClockEl.textContent = formattedClock;
+
+                if (index === 0) {
+                    const mainClockEl = document.getElementById('pitch-clock');
+                    if (mainClockEl) mainClockEl.textContent = formattedClock;
+                }
+            });
+        }, 1000);
+
+        // 3-Second Synchronized Live Engine (Flashes odds green/red, moves 2D ball, updates live cash-out)
+        setInterval(() => {
+            runThreeSecondLiveCycle(false);
+        }, 3000);
+
+        // ==========================================
+        // 7. INITIALIZE APPLICATION ON LOAD
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTicker();
+            renderMatchesGrid();
+            renderBetSlip();
+            renderActiveBets();
+            resizePitchCanvas();
+            requestAnimationFrame(drawSoccerPitch);
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
